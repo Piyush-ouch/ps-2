@@ -2,7 +2,7 @@
   <img src="rydex/public/logo.jpeg" alt="Rydex Logo" width="120" height="120" style="border-radius: 20px;" />
 </p>
 
-<h1 align="center"></h1>
+<h1 align="center">RYDEX</h1>
 <h3 align="center">Smart Multi-Vendor Vehicle Booking Platform</h3>
 
 <p align="center">
@@ -29,7 +29,7 @@ The platform supports booking bikes, autos, cars, loading vehicles, and trucks w
 
 ---
 
-## ✨ Features
+## Features
 
 ### 🧑‍💼 For Riders (Users)
 - **Search & Book** vehicles by category (Bike, Auto, Car, Loading, Truck)
