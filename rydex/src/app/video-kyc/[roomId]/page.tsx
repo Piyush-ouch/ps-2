@@ -166,26 +166,16 @@ const handleReject = async () => {
     setLoading(true);
 
     try {
-      const appID = Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID);
-      const serverSecret =
-        process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET;
+      // 1. Fetch secure token from the backend
+      const res = await axios.post("/api/zego/token", { roomId });
+      const { token } = res.data;
 
-      const displayName = isAdmin
-        ? "Admin"
-        : `${userData?.name} (${userData?.email})`;
+      if (!token) {
+        throw new Error("Token generation failed on the server");
+      }
 
-      const userId = userData?._id.toString()!;
-
-      const kitToken =
-        ZegoUIKitPrebuilt.generateKitTokenForTest(
-          appID,
-          serverSecret!,
-          roomId,
-          userId,
-          displayName
-        );
-
-      const zp = ZegoUIKitPrebuilt.create(kitToken);
+      // 2. Initialize prebuilt instance with the server-generated token
+      const zp = ZegoUIKitPrebuilt.create(token);
       zpRef.current = zp;
 
       zp.joinRoom({
@@ -197,8 +187,9 @@ const handleReject = async () => {
       });
 
       setJoined(true);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Video KYC error:", err);
+      alert(err.response?.data?.message || err.message || "Failed to join secure call");
       joinedRef.current = false;
     } finally {
       setLoading(false);
