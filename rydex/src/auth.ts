@@ -24,6 +24,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if(!user){
                 throw new Error("user does not exist")
             }
+            if (!user.isEmailVerified) {
+                throw new Error("please verify your email first")
+            }
             const isMatch=await bcrypt.compare(password,user.password)
             if(!isMatch){
                 throw new Error("incorrect password")
@@ -54,6 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
          dbUser=await User.create({
           name:user.name,
           email:user.email,
+          isEmailVerified: true,
          })
        }
 
