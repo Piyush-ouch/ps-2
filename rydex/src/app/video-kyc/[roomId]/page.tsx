@@ -168,14 +168,29 @@ const handleReject = async () => {
     try {
       // 1. Fetch secure token from the backend
       const res = await axios.post("/api/zego/token", { roomId });
-      const { token } = res.data;
+      const { token: serverToken, appID } = res.data;
 
-      if (!token) {
+      if (!serverToken) {
         throw new Error("Token generation failed on the server");
       }
 
-      // 2. Initialize prebuilt instance with the server-generated token
-      const zp = ZegoUIKitPrebuilt.create(token);
+      const displayName = isAdmin
+        ? "Admin"
+        : `${userData?.name || "User"} (${userData?.email || "Email"})`;
+
+      const userId = userData?._id?.toString() || "anonymous";
+
+      // 2. Generate the client KitToken using the server-generated token
+      const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+        appID,
+        serverToken,
+        roomId!,
+        userId,
+        displayName
+      );
+
+      // 3. Initialize prebuilt instance with the client-generated KitToken
+      const zp = ZegoUIKitPrebuilt.create(kitToken);
       zpRef.current = zp;
 
       zp.joinRoom({
