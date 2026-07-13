@@ -32,31 +32,36 @@ export async function POST(req: Request) {
     await booking.save();
 
     /* Send Mail */
-
-    if (booking.user?.email) {
-
-      await sendMail(
-        booking.user.email,
-        "Your Drop OTP - RYDEX",
-        `
-        <div style="font-family:sans-serif;padding:20px">
-          <h2>Ride OTP</h2>
-
-          <p>Your Drop OTP is:</p>
-
-          <h1 style="letter-spacing:6px">${otp}</h1>
-
-          <p>This OTP is valid for 5 minutes.</p>
-
-          <p>Share this OTP with your driver to complete the ride.</p>
-
-          <br/>
-
-          <b>RYDEX</b>
-        </div>
-        `
-      );
-
+    console.log(`Drop OTP for Booking ${bookingId}: ${otp}`);
+    try {
+      if (booking.user?.email && process.env.PASS) {
+        await sendMail(
+          booking.user.email,
+          "Your Drop OTP - RYDEX",
+          `
+          <div style="font-family:sans-serif;padding:20px">
+            <h2>Ride OTP</h2>
+  
+            <p>Your Drop OTP is:</p>
+  
+            <h1 style="letter-spacing:6px">${otp}</h1>
+  
+            <p>This OTP is valid for 5 minutes.</p>
+  
+            <p>Share this OTP with your driver to complete the ride.</p>
+  
+            <br/>
+  
+            <b>RYDEX</b>
+          </div>
+          `
+        );
+      } else if (!process.env.PASS) {
+        console.warn("Skipping drop OTP email send: PASS is empty. OTP is printed in the terminal above.");
+      }
+    } catch (mailError) {
+      console.error("Failed to send drop OTP email:", mailError);
+      console.warn("You can use the console-logged OTP above to proceed with local verification.");
     }
 
     return NextResponse.json({
