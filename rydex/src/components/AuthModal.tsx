@@ -254,12 +254,23 @@ export default function AuthModal({ open, onClose }: Props) {
                       <div className="flex items-center gap-3 border border-black/20 rounded-xl px-4 py-3">
                         <Lock size={18} className="text-gray-500" />
                         <input
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           placeholder="Password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="w-full bg-transparent outline-none text-sm"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="text-gray-500"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
                       </div>
 
                       <button
