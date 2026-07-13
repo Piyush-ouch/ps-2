@@ -76,11 +76,20 @@ export async function POST(req: NextRequest) {
     /* ---------- SEND OTP (PLACEHOLDER) ---------- */
     // 🔥 Replace with real email service (Nodemailer / Resend / AWS SES)
     console.log(`OTP for ${email}: ${otp}`);
-    await sendMail(
-       email,
-        "Your OTP for Email Verification",
-        `<h2>Your Email Verification OTP is <strong>${otp}</strong></h2>`
-    )
+    try {
+      if (process.env.PASS) {
+        await sendMail(
+           email,
+            "Your OTP for Email Verification",
+            `<h2>Your Email Verification OTP is <strong>${otp}</strong></h2>`
+        );
+      } else {
+        console.warn("Skipping email send: PASS is empty. OTP is printed in the terminal above.");
+      }
+    } catch (mailError) {
+      console.error("Failed to send OTP email:", mailError);
+      console.warn("You can use the console-logged OTP above to proceed with local verification.");
+    }
 
     return NextResponse.json(
       {

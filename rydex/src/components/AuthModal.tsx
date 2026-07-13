@@ -69,12 +69,17 @@ export default function AuthModal({ open, onClose }: Props) {
 
   // 📝 SIGNUP
   const handleSignUp = async () => {
-    await axios.post("/api/auth/register", {
-      name,
-      email,
-      password,
-    });
-    setStep("otp");
+    try {
+      await axios.post("/api/auth/register", {
+        name,
+        email,
+        password,
+      });
+      setStep("otp");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      alert(error.response?.data?.message || "Failed to register. Please try again.");
+    }
   };
 
   // 🔢 OTP VERIFY
