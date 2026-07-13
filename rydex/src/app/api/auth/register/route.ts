@@ -35,11 +35,17 @@ export async function POST(req: NextRequest) {
 
     const existingUser = await User.findOne({ email });
 
-    if (existingUser && existingUser.isEmailVerified) {
-      return NextResponse.json(
-        { message: "User already exists. Please login." },
-        { status: 409 }
-      );
+    if (existingUser) {
+      if (existingUser.isEmailVerified || !existingUser.password) {
+        return NextResponse.json(
+          {
+            message: !existingUser.password
+              ? "This email is registered with Google. Please log in using Google."
+              : "User already exists. Please login.",
+          },
+          { status: 409 }
+        );
+      }
     }
 
     /* ---------- HASH PASSWORD ---------- */
