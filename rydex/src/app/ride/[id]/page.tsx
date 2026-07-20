@@ -12,6 +12,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import RideChat from "@/components/RideChat";
+import RatingModal from "@/components/RatingModal";
 
 const LiveRideMap = dynamic(() => import("@/components/LiveTrackingMap"), { ssr: false });
 
@@ -294,8 +295,8 @@ export default function RidePage() {
    COMPLETED FULL SCREEN
 ══════════════════════════════════════════════════════════════════════ */
 function CompletedScreen({ booking, router }: { booking: BookingDetails; router: any }) {
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [submitted,      setSubmitted]      = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [rated, setRated] = useState(false);
 
   return (
     <motion.div
@@ -385,43 +386,36 @@ function CompletedScreen({ booking, router }: { booking: BookingDetails; router:
             </div>
           </div>
 
-          {/* Rating */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4">
-            <p className="text-zinc-400 text-sm font-semibold text-center mb-3">How was your experience?</p>
-            <div className="flex justify-center gap-2 mb-3">
-              {[1, 2, 3, 4, 5].map(n => (
+          {/* Rating Prompt / Action */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4 text-center">
+            {rated ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-emerald-400">
+                <CheckCircle2 size={18} />
+                <span className="text-sm font-semibold">Rating & Review Submitted!</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-zinc-300 text-sm font-semibold mb-1">How was your ride?</p>
+                <p className="text-zinc-500 text-xs mb-4">Rate your driver & leave detailed feedback</p>
                 <button
-                  key={n}
-                  onClick={() => !submitted && setSelectedRating(n)}
-                  className={`w-12 h-12 rounded-xl text-xl transition-all active:scale-90 ${
-                    selectedRating >= n
-                      ? "bg-amber-400 text-zinc-900"
-                      : "bg-zinc-800 hover:bg-zinc-700 text-zinc-500"
-                  }`}
-                >★</button>
-              ))}
-            </div>
-            <AnimatePresence>
-              {selectedRating > 0 && !submitted && (
-                <motion.button
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  onClick={() => setSubmitted(true)}
-                  className="w-full bg-white text-zinc-900 py-3 rounded-xl text-sm font-bold hover:bg-zinc-100 transition-colors"
+                  onClick={() => setModalOpen(true)}
+                  className="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold py-3 rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2"
                 >
-                  Submit Rating
-                </motion.button>
-              )}
-              {submitted && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center justify-center gap-2 py-2"
-                >
-                  <CheckCircle2 size={16} className="text-emerald-400" />
-                  <p className="text-emerald-400 text-sm font-semibold">Thanks for your feedback!</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <Star size={18} className="fill-zinc-950" />
+                  <span>Rate Driver</span>
+                </button>
+              </>
+            )}
           </div>
+
+          <RatingModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            bookingId={booking._id}
+            targetName={booking.driver?.name}
+            targetRole="driver"
+            onSuccess={() => setRated(true)}
+          />
 
           <button
             onClick={() => router.push("/")}

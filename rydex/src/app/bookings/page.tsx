@@ -10,8 +10,10 @@ import {
   ChevronRight,
   MapPin,
   Phone,
+  Star,
 } from "lucide-react";
 import axios from "axios";
+import RatingModal from "@/components/RatingModal";
 
 interface Booking {
   _id: string;
@@ -21,6 +23,7 @@ interface Booking {
   status: string;
   paymentStatus: string;
   paymentMethod?: string;
+  userRated?: boolean;
   createdAt: string;
   userMobileNumber?: string;
   driverMobileNumber?: string;
@@ -37,6 +40,7 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [activeRatingBooking, setActiveRatingBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -269,18 +273,52 @@ export default function MyBookingsPage() {
                           {booking.paymentStatus || 'pending'}
                         </span>
                       </div>
-                      <button
-                        onClick={() => window.location.href = `/ride/${booking._id}`}
-                        className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-lg transition-colors"
-                      >
-                        <span>View Details</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {booking.status === "completed" && !booking.userRated && (
+                          <button
+                            onClick={() => setActiveRatingBooking(booking)}
+                            className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                            <span>Rate Driver</span>
+                          </button>
+                        )}
+                        {booking.status === "completed" && booking.userRated && (
+                          <span className="text-xs text-teal-600 font-medium bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200 flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-teal-600 text-teal-600" />
+                            <span>Rated</span>
+                          </span>
+                        )}
+                        <button
+                          onClick={() => window.location.href = `/ride/${booking._id}`}
+                          className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-lg transition-colors"
+                        >
+                          <span>View Details</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
+          )}
+
+          {activeRatingBooking && (
+            <RatingModal
+              isOpen={!!activeRatingBooking}
+              onClose={() => setActiveRatingBooking(null)}
+              bookingId={activeRatingBooking._id}
+              targetName={activeRatingBooking.driver?.name || "Driver"}
+              targetRole="driver"
+              onSuccess={() => {
+                setBookings((prev) =>
+                  prev.map((b) =>
+                    b._id === activeRatingBooking._id ? { ...b, userRated: true } : b
+                  )
+                );
+              }}
+            />
           )}
         </div>
       </div>

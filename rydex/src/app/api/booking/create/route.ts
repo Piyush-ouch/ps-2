@@ -12,6 +12,15 @@ export async function POST(req: Request) {
   if (!session?.user?.id)
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
+  // Check user reputation & booking eligibility
+  const userRecord = await User.findById(session.user.id).select("isRatingBlocked averageRating totalRatings");
+  if (userRecord && (userRecord.isRatingBlocked || ((userRecord.averageRating ?? 5) < 2.0 && (userRecord.totalRatings ?? 0) >= 3))) {
+    return NextResponse.json(
+      { message: "Booking eligibility suspended due to low user reputation rating. Please contact support." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
 
   const {

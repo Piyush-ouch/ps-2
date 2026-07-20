@@ -51,6 +51,8 @@ pickupOtpExpires: Date
  dropOtp: string
 
 dropOtpExpires: Date
+  userRated?: boolean;
+  driverRated?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,6 +139,14 @@ dropOtpExpires: {
       type: String, 
       required: true,
       trim: true,
+    },
+    userRated: {
+      type: Boolean,
+      default: false,
+    },
+    driverRated: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

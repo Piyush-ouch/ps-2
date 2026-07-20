@@ -48,8 +48,13 @@ socketId:string | null
 
   lastLocationUpdate?: Date;
 
-  /* ===== COMMON ===== */
+  /* ===== RATINGS & REPUTATION ===== */
+  averageRating: number;
+  totalRatings: number;
+  ratingSum: number;
+  isRatingBlocked: boolean;
 
+  /* ===== COMMON ===== */
   isEmailVerified: boolean;
   otp?: string;
   otpExpiresAt?: Date;
@@ -159,6 +164,28 @@ const UserSchema = new Schema<IUser>(
 
     lastLocationUpdate: {
       type: Date,
+    },
+
+    /* ===== RATINGS & REPUTATION ===== */
+    averageRating: {
+      type: Number,
+      default: 5.0,
+      min: 1.0,
+      max: 5.0,
+    },
+    totalRatings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    ratingSum: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isRatingBlocked: {
+      type: Boolean,
+      default: false,
     },
 
     /* ===== AUTH ===== */
