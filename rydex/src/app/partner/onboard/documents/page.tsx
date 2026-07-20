@@ -8,16 +8,17 @@ import {
   FileCheck,
   CheckCircle,
   Pencil,
+  ShieldCheck,
+  AlertTriangle,
+  Calendar,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-/* ================= TYPES ================= */
-
 type DocKey = "aadhaar" | "license" | "rc";
-
-/* ================= PAGE ================= */
 
 export default function PartnerDocumentsPage() {
   const router = useRouter();
@@ -28,45 +29,67 @@ export default function PartnerDocumentsPage() {
     rc: null,
   });
 
+  const [aadhaarNumber, setAadhaarNumber] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [rcNumber, setRcNumber] = useState("");
+
+  const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
+  const [rcExpiryDate, setRcExpiryDate] = useState("");
+
   const [completed, setCompleted] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [bgcLoading, setBgcLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bgcResult, setBgcResult] = useState<any>(null);
 
-  /* ================= FETCH EXISTING DOCS ================= */
+  /* ================= FETCH EXISTING DOCS & VERIFICATION ================= */
 
   useEffect(() => {
     axios
       .get("/api/partner/documents")
       .then((res) => {
         if (res.data?.documents) {
+          const d = res.data.documents;
           setCompleted(true);
+          setAadhaarNumber(d.aadhaarNumber || "");
+          setLicenseNumber(d.licenseNumber || "");
+          setRcNumber(d.rcNumber || "");
+
+          if (d.licenseExpiryDate) {
+            setLicenseExpiryDate(
+              new Date(d.licenseExpiryDate).toISOString().split("T")[0]
+            );
+          }
+          if (d.rcExpiryDate) {
+            setRcExpiryDate(
+              new Date(d.rcExpiryDate).toISOString().split("T")[0]
+            );
+          }
+          if (d.backgroundCheckStatus) {
+            setBgcResult({
+              status: d.backgroundCheckStatus,
+              reference: d.backgroundCheckReference,
+              completedAt: d.backgroundCheckCompletedAt,
+              notes: d.backgroundCheckNotes,
+            });
+          }
         }
       })
       .catch(() => {});
   }, []);
-
-  const canContinue =
-    completed && !editMode
-      ? true
-      : docs.aadhaar && docs.license && docs.rc;
 
   const handleFileChange = (key: DocKey, file: File | null) => {
     if (!file) return;
     setDocs((prev) => ({ ...prev, [key]: file }));
   };
 
-  /* ================= SUBMIT ================= */
+  /* ================= SUBMIT DOCUMENTS ================= */
 
   const submitDocuments = async () => {
     if (completed && !editMode) {
       router.push("/partner/onboard/bank");
-      return;
-    }
-
-    if (!docs.aadhaar || !docs.license || !docs.rc) {
-      setError("Please upload all required documents");
       return;
     }
 
@@ -75,30 +98,55 @@ export default function PartnerDocumentsPage() {
 
     try {
       const formData = new FormData();
-      formData.append("aadhaar", docs.aadhaar);
-      formData.append("license", docs.license);
-      formData.append("rc", docs.rc);
+      if (docs.aadhaar) formData.append("aadhaar", docs.aadhaar);
+      if (docs.license) formData.append("license", docs.license);
+      if (docs.rc) formData.append("rc", docs.rc);
+
+      if (aadhaarNumber) formData.append("aadhaarNumber", aadhaarNumber);
+      if (licenseNumber) formData.append("licenseNumber", licenseNumber);
+      if (rcNumber) formData.append("rcNumber", rcNumber);
+
+      if (licenseExpiryDate) formData.append("licenseExpiryDate", licenseExpiryDate);
+      if (rcExpiryDate) formData.append("rcExpiryDate", rcExpiryDate);
 
       await axios.post("/api/partner/documents", formData);
 
+      setCompleted(true);
+      setEditMode(false);
       router.push("/partner/onboard/bank");
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ||
-          "Document upload failed"
+        err?.response?.data?.message || "Document upload and verification submission failed"
       );
     } finally {
       setLoading(false);
     }
   };
 
+  /* ================= TRIGGER BACKGROUND CHECK ================= */
+
+  const triggerBackgroundCheck = async () => {
+    setBgcLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post("/api/partner/background-check");
+      setBgcResult(res.data.backgroundCheck);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || "Background check verification failed."
+      );
+    } finally {
+      setBgcLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-xl bg-white rounded-3xl border border-gray-200 shadow-[0_25px_70px_rgba(0,0,0,0.15)] p-6 sm:p-8"
+        className="w-full max-w-2xl bg-white rounded-3xl border border-gray-200 shadow-[0_25px_70px_rgba(0,0,0,0.1)] p-6 sm:p-10"
       >
         {/* ================= HEADER ================= */}
         <div className="relative text-center">
@@ -109,23 +157,23 @@ export default function PartnerDocumentsPage() {
             <ArrowLeft size={18} />
           </button>
 
-          <p className="text-xs text-gray-500 font-medium">
-            Step 2 of 3
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+            Step 2 of 3 • Verification & Expiry Tracking
           </p>
 
           <h1 className="text-2xl font-bold mt-1">
-            Upload Documents
+            Driver Verification & Documents
           </h1>
 
-          <p className="text-sm text-gray-500 mt-2">
-            Required for verification
+          <p className="text-sm text-gray-500 mt-1">
+            Upload document proofs, numbers, and expiry details
           </p>
 
           {completed && !editMode && (
             <div className="mt-4 flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+              <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
                 <CheckCircle size={16} />
-                Uploaded successfully
+                Documents Uploaded & Saved
               </div>
 
               <motion.button
@@ -135,85 +183,204 @@ export default function PartnerDocumentsPage() {
                 className="text-xs font-semibold text-black underline flex items-center gap-1"
               >
                 <Pencil size={12} />
-                Edit documents
+                Edit documents & expiry dates
               </motion.button>
             </div>
           )}
         </div>
 
-        {/* ================= DOCUMENT LIST ================= */}
+        {/* ================= BACKGROUND CHECK STATUS BANNER ================= */}
+        <div className="mt-6 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-400/20 text-amber-400">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Automated Background Check
+                </p>
+                <h4 className="text-sm font-bold text-white mt-0.5">
+                  {bgcResult?.status === "passed"
+                    ? "Passed & Verified"
+                    : bgcResult?.status === "flagged"
+                    ? "Flagged for Expiry / Verification"
+                    : bgcResult?.status === "failed"
+                    ? "Verification Failed"
+                    : "Not Verified Yet"}
+                </h4>
+              </div>
+            </div>
+
+            <button
+              onClick={triggerBackgroundCheck}
+              disabled={bgcLoading}
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {bgcLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Checking...</span>
+                </>
+              ) : (
+                <span>Run Background Check</span>
+              )}
+            </button>
+          </div>
+
+          {bgcResult?.reference && (
+            <div className="mt-3 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex flex-wrap justify-between gap-2">
+              <span>Ref: <strong className="text-slate-200">{bgcResult.reference}</strong></span>
+              {bgcResult.notes && <span className="text-slate-300">{bgcResult.notes}</span>}
+            </div>
+          )}
+        </div>
+
+        {/* ================= DOCUMENT UPLOAD & DETAILS FORM ================= */}
         <div
-          className={`mt-8 space-y-5 ${
-            completed && !editMode
-              ? "opacity-50 pointer-events-none"
-              : ""
+          className={`mt-6 space-y-6 ${
+            completed && !editMode ? "opacity-60 pointer-events-none" : ""
           }`}
         >
-          <DocUpload
-            label="Aadhaar / ID Proof"
-            desc="Government issued ID"
-            file={docs.aadhaar}
-            onChange={(f) =>
-              handleFileChange("aadhaar", f)
-            }
-          />
+          {/* Aadhaar Section */}
+          <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
+            <DocUpload
+              label="Aadhaar / Identity Proof"
+              desc="12-digit Government issued ID"
+              file={docs.aadhaar}
+              onChange={(f) => handleFileChange("aadhaar", f)}
+            />
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">
+                Aadhaar Number
+              </label>
+              <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-gray-50">
+                <CreditCard size={16} className="text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="e.g. 1234 5678 9012"
+                  value={aadhaarNumber}
+                  onChange={(e) => setAadhaarNumber(e.target.value)}
+                  className="w-full text-sm outline-none bg-transparent"
+                />
+              </div>
+            </div>
+          </div>
 
-          <DocUpload
-            label="Driving License"
-            desc="Valid driving license"
-            file={docs.license}
-            onChange={(f) =>
-              handleFileChange("license", f)
-            }
-          />
+          {/* License Section */}
+          <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
+            <DocUpload
+              label="Driving License"
+              desc="Valid driving license document"
+              file={docs.license}
+              onChange={(f) => handleFileChange("license", f)}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">
+                  License Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. DL-1420110012345"
+                  value={licenseNumber}
+                  onChange={(e) => setLicenseNumber(e.target.value)}
+                  className="w-full text-sm outline-none border rounded-xl px-3 py-2 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">
+                  License Expiry Date
+                </label>
+                <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-gray-50">
+                  <Calendar size={16} className="text-gray-400" />
+                  <input
+                    type="date"
+                    value={licenseExpiryDate}
+                    onChange={(e) => setLicenseExpiryDate(e.target.value)}
+                    className="w-full text-sm outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <DocUpload
-            label="Vehicle RC"
-            desc="Registration Certificate"
-            file={docs.rc}
-            onChange={(f) => handleFileChange("rc", f)}
-          />
+          {/* RC Section */}
+          <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
+            <DocUpload
+              label="Vehicle RC (Registration Certificate)"
+              desc="Vehicle registration certificate document"
+              file={docs.rc}
+              onChange={(f) => handleFileChange("rc", f)}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">
+                  RC Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. MH01AB1234"
+                  value={rcNumber}
+                  onChange={(e) => setRcNumber(e.target.value)}
+                  className="w-full text-sm outline-none border rounded-xl px-3 py-2 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">
+                  RC Expiry Date
+                </label>
+                <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-gray-50">
+                  <Calendar size={16} className="text-gray-400" />
+                  <input
+                    type="date"
+                    value={rcExpiryDate}
+                    onChange={(e) => setRcExpiryDate(e.target.value)}
+                    className="w-full text-sm outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* INFO */}
+        {/* SECURE STORAGE FOOTER */}
         <div className="mt-6 flex items-start gap-3 text-xs text-gray-500">
-          <FileCheck size={16} className="mt-0.5" />
+          <FileCheck size={16} className="mt-0.5 shrink-0" />
           <p>
-            Documents are securely stored and manually verified
-            by our team.
+            Documents & expiry dates are encrypted, monitored periodically, and verified by our compliance team.
           </p>
         </div>
 
-        {/* ERROR */}
+        {/* ERROR BANNER */}
         {error && (
-          <p className="mt-4 text-sm text-red-500">
-            {error}
-          </p>
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2 text-red-600 text-xs">
+            <AlertTriangle size={16} className="shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
 
-        {/* CTA */}
+        {/* CTA BUTTON */}
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
           disabled={loading}
           onClick={submitDocuments}
-          className="mt-8 w-full h-14 rounded-2xl bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition"
+          className="mt-8 w-full h-14 rounded-2xl bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition shadow-lg"
         >
           {completed && !editMode
             ? "Continue"
             : editMode
-            ? "Save & Continue"
+            ? "Save & Update Verification"
             : loading
             ? "Uploading..."
-            : "Continue"}
+            : "Save & Continue"}
           <ArrowRight size={18} />
         </motion.button>
       </motion.div>
     </div>
   );
 }
-
-/* ================= DOC UPLOAD ================= */
 
 function DocUpload({
   label,
@@ -227,32 +394,21 @@ function DocUpload({
   onChange: (f: File | null) => void;
 }) {
   return (
-    <motion.label
-      whileHover={{ scale: 1.02 }}
-      className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 cursor-pointer hover:border-black transition"
-    >
+    <label className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 cursor-pointer hover:border-black transition">
       <div>
-        <p className="text-sm font-semibold">
-          {label}
-        </p>
-        <p className="text-xs text-gray-500">
-          {desc}
-        </p>
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="text-xs text-gray-500">{desc}</p>
       </div>
 
       <div className="flex items-center gap-3">
         {file ? (
-          <span className="text-xs text-green-600 font-medium">
-            Selected
-          </span>
+          <span className="text-xs text-emerald-600 font-medium">Selected</span>
         ) : (
-          <span className="text-xs text-gray-400">
-            Upload
-          </span>
+          <span className="text-xs text-gray-400">Upload File</span>
         )}
 
-        <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center">
-          <UploadCloud size={18} />
+        <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center">
+          <UploadCloud size={16} />
         </div>
       </div>
 
@@ -260,10 +416,8 @@ function DocUpload({
         type="file"
         accept="image/*,.pdf"
         hidden
-        onChange={(e) =>
-          onChange(e.target.files?.[0] || null)
-        }
+        onChange={(e) => onChange(e.target.files?.[0] || null)}
       />
-    </motion.label>
+    </label>
   );
 }

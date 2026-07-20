@@ -54,6 +54,10 @@ socketId:string | null
   ratingSum: number;
   isRatingBlocked: boolean;
 
+  /* ===== DRIVER VERIFICATION & EXPIRY ===== */
+  backgroundCheckStatus?: "not_started" | "pending" | "passed" | "failed" | "flagged";
+  hasExpiredDocuments?: boolean;
+
   /* ===== COMMON ===== */
   isEmailVerified: boolean;
   otp?: string;
@@ -184,6 +188,17 @@ const UserSchema = new Schema<IUser>(
       min: 0,
     },
     isRatingBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
+    /* ===== DRIVER VERIFICATION & EXPIRY ===== */
+    backgroundCheckStatus: {
+      type: String,
+      enum: ["not_started", "pending", "passed", "failed", "flagged"],
+      default: "not_started",
+    },
+    hasExpiredDocuments: {
       type: Boolean,
       default: false,
     },
