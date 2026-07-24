@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import {
   ArrowLeft, MapPin, Navigation,
   Bike, Car, Truck, Clock, Route,
-  Zap, Search, RefreshCw, Layers
+  Zap, Search, RefreshCw, Layers, Package
 } from "lucide-react";
 import VehicleBookingCard from "@/components/VehicleBookingCard";
 
@@ -33,6 +33,9 @@ function SearchContent() {
   const [loading,  setLoading]  = useState(false);
 
   const vehicleParam   = params.get("vehicle") || "all";
+  const isPooled       = params.get("isPooled") === "true";
+  const parcelCategory = params.get("parcelCategory") || "small";
+
   const [activeCategory, setActiveCategory] = useState<string>(vehicleParam);
   const mobileNumber   = params.get("mobileNumber") || "";
   const pickupLat      = Number(params.get("pickupLat"));
@@ -159,15 +162,24 @@ function SearchContent() {
             className="flex items-center justify-between mb-4"
           >
             <div>
-              <h2 className="text-zinc-900 text-lg font-black tracking-tight">
-                {loading
-                  ? "Finding vehicles…"
-                  : filteredVehicles.length > 0
-                  ? `${filteredVehicles.length} Available ${activeCategory !== "all" ? activeCategory.toUpperCase() : ""}`
-                  : "No vehicles nearby"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-zinc-900 text-lg font-black tracking-tight">
+                  {loading
+                    ? "Finding vehicles…"
+                    : filteredVehicles.length > 0
+                    ? `${filteredVehicles.length} Available ${activeCategory !== "all" ? activeCategory.toUpperCase() : ""}`
+                    : "No vehicles nearby"}
+                </h2>
+                {isPooled && (
+                  <span className="flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    <Package size={11} /> Smart Pool Mode
+                  </span>
+                )}
+              </div>
               <p className="text-zinc-400 text-xs mt-0.5">
-                Compare available transport options & estimated fares
+                {isPooled
+                  ? "Comparing split-fare pooled prices for your parcel"
+                  : "Compare available transport options & estimated fares"}
               </p>
             </div>
 
@@ -264,17 +276,23 @@ function SearchContent() {
                   vehicle={v}
                   distanceKm={km ?? undefined}
                   isRecommended={i === 0}
-                  onBook={() => {
+                  isPooled={isPooled}
+                  parcelCategory={parcelCategory}
+                  onBook={({ effectiveFare, originalFare, savingsAmount }) => {
                     const url = new URLSearchParams({
                       pickup, drop,
-                      vehicle:    v.type,
-                      driverId:   v.owner,
-                      vehicleId:  v._id,
-                      fare:       String(Math.round(v.baseFare + (km ?? 0) * v.pricePerKm)),
-                      pickupLat:  String(pickupLat),
-                      pickupLng:  String(pickupLng),
-                      dropLat:    params.get("dropLat") || "",
-                      dropLng:    params.get("dropLng") || "",
+                      vehicle:        v.type,
+                      driverId:       v.owner,
+                      vehicleId:      v._id,
+                      fare:           String(effectiveFare),
+                      originalFare:   String(originalFare),
+                      savingsAmount:  String(savingsAmount),
+                      isPooled:       String(isPooled),
+                      parcelCategory,
+                      pickupLat:      String(pickupLat),
+                      pickupLng:      String(pickupLng),
+                      dropLat:        params.get("dropLat") || "",
+                      dropLng:        params.get("dropLng") || "",
                       mobileNumber,
                     });
                     router.push(`/checkout?${url.toString()}`);

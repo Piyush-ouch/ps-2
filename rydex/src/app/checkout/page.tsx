@@ -5,7 +5,7 @@ import {
   MapPin, Navigation, ShieldCheck,
   Bike, Car, Truck, Loader2, CheckCircle2,
   XCircle, Clock, CreditCard, Banknote,
-  ArrowRight, RotateCcw, AlertCircle, Wallet,
+  ArrowRight, RotateCcw, AlertCircle, Wallet, Package
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -34,6 +34,10 @@ function CheckoutContent() {
   const pickupLng = Number(params.get("pickupLng"));
   const dropLat   = Number(params.get("dropLat"));
   const dropLng   = Number(params.get("dropLng"));
+  const isPooled       = params.get("isPooled") === "true";
+  const parcelCategory = params.get("parcelCategory") || "standard";
+  const originalFare   = Number(params.get("originalFare")) || fare;
+  const savingsAmount  = Number(params.get("savingsAmount")) || 0;
 
   const VehicleIcon = VEHICLE_ICONS[vehicle.toLowerCase()] || Car;
 
@@ -54,6 +58,7 @@ function CheckoutContent() {
           pickupLocation: { type: "Point", coordinates: [pickupLng, pickupLat] },
           dropLocation:   { type: "Point", coordinates: [dropLng,   dropLat]   },
           fare, mobileNumber,
+          isPooled, parcelCategory, originalFare, savingsAmount,
         }),
       });
       const data = await res.json();
@@ -284,6 +289,28 @@ function CheckoutContent() {
                   <Navigation size={14} className="text-zinc-400 flex-shrink-0 mt-1" />
                 </div>
               </div>
+
+              {/* Smart Parcel Pool Breakdown */}
+              {isPooled && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                      <Package size={14} className="text-emerald-700" /> Smart Parcel Pool ({parcelCategory.toUpperCase()})
+                    </div>
+                    <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                      Saved ₹{savingsAmount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-emerald-800">
+                    <span>Original Solo Fare:</span>
+                    <span className="line-through text-zinc-400 font-medium">₹{originalFare}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-emerald-950 font-black mt-1.5 pt-1.5 border-t border-emerald-200">
+                    <span>Pooled Total Payable:</span>
+                    <span>₹{fare}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Fare */}
               <div className="flex items-end justify-between pt-6 border-t border-zinc-100">

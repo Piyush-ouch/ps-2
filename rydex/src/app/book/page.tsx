@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, MapPin, Navigation,
   Bike, Car, Truck, LocateFixed, Phone,
-  CheckCircle2, ChevronRight, Layers
+  CheckCircle2, ChevronRight, Layers, Package, Sparkles, UserCheck
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,6 +14,7 @@ type Place = {
   country?: string; countrycode?: string; lat: number; lng: number;
 };
 type VehicleType = "all" | "bike" | "auto" | "car" | "loading" | "truck";
+type ParcelCategory = "small" | "medium" | "heavy";
 
 const VEHICLES = [
   { id: "all",     label: "All Vehicles", Icon: Layers, desc: "Compare all prices" },
@@ -24,6 +25,12 @@ const VEHICLES = [
   { id: "truck",   label: "Truck",        Icon: Truck,  desc: "Heavy transport"    },
 ];
 
+const PARCEL_TIERS: { id: ParcelCategory; label: string; desc: string; discount: string }[] = [
+  { id: "small",  label: "Small (< 15 kg)",  desc: "Boxes, Envelopes", discount: "35% OFF" },
+  { id: "medium", label: "Medium (< 50 kg)", desc: "Equipment, Goods", discount: "25% OFF" },
+  { id: "heavy",  label: "Heavy (< 150 kg)", desc: "Bulk/Multi Cargo", discount: "15% OFF" },
+];
+
 const stepVariants = {
   hidden:  { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0 },
@@ -32,10 +39,12 @@ const stepVariants = {
 export default function BookPage() {
   const router = useRouter();
 
-  const [pickup,   setPickup]   = useState("");
-  const [drop,     setDrop]     = useState("");
-  const [vehicle,  setVehicle]  = useState<VehicleType>("all");
-  const [mobile,   setMobile]   = useState("");
+  const [pickup,         setPickup]         = useState("");
+  const [drop,           setDrop]           = useState("");
+  const [vehicle,        setVehicle]        = useState<VehicleType>("all");
+  const [mobile,         setMobile]         = useState("");
+  const [isPooled,       setIsPooled]       = useState(false);
+  const [parcelCategory, setParcelCategory] = useState<ParcelCategory>("small");
 
   const [pickupResults, setPickupResults] = useState<Place[]>([]);
   const [dropResults,   setDropResults]   = useState<Place[]>([]);
@@ -119,7 +128,7 @@ export default function BookPage() {
             <ArrowLeft size={17} className="text-zinc-900" />
           </motion.button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-zinc-900 text-xl font-black tracking-tight">Book a Ride</h1>
+            <h1 className="text-zinc-900 text-xl font-black tracking-tight">Book a Ride / Parcel</h1>
             <p className="text-zinc-400 text-xs mt-0.5">Fill in the details below</p>
           </div>
           {/* Progress dots */}
@@ -267,11 +276,88 @@ export default function BookPage() {
             {/* DIVIDER */}
             <div className="h-px bg-zinc-100" />
 
-            {/* ══ STEP 2 — MOBILE ══ */}
-            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.15 }}>
+            {/* ══ STEP 2 — RIDE / PARCEL POOL MODE ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.12 }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-[9px] font-black">2</span>
+                  </div>
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Delivery Mode</p>
+                </div>
+                <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Save up to 35%
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 bg-zinc-100 p-1.5 rounded-2xl border border-zinc-200">
+                <button
+                  onClick={() => setIsPooled(false)}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    !isPooled
+                      ? "bg-zinc-900 text-white shadow"
+                      : "text-zinc-600 hover:text-zinc-900"
+                  }`}
+                >
+                  <UserCheck size={14} /> Solo Ride / Delivery
+                </button>
+
+                <button
+                  onClick={() => setIsPooled(true)}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    isPooled
+                      ? "bg-emerald-600 text-white shadow"
+                      : "text-zinc-600 hover:text-zinc-900"
+                  }`}
+                >
+                  <Package size={14} /> Smart Parcel Pool
+                </button>
+              </div>
+
+              {/* Weight Tier selection if Pooling active */}
+              <AnimatePresence>
+                {isPooled && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3.5 space-y-2 overflow-hidden"
+                  >
+                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Select Parcel Weight Tier:</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PARCEL_TIERS.map((tier) => {
+                        const active = parcelCategory === tier.id;
+                        return (
+                          <button
+                            key={tier.id}
+                            onClick={() => setParcelCategory(tier.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all ${
+                              active
+                                ? "bg-emerald-900 text-white border-emerald-900 shadow-md"
+                                : "bg-emerald-50/50 border-emerald-200 text-zinc-800 hover:bg-emerald-100/60"
+                            }`}
+                          >
+                            <p className="text-xs font-black truncate">{tier.label}</p>
+                            <p className={`text-[9px] font-bold ${active ? "text-emerald-200" : "text-emerald-600"}`}>
+                              {tier.discount}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* DIVIDER */}
+            <div className="h-px bg-zinc-100" />
+
+            {/* ══ STEP 3 — MOBILE ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.18 }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-[9px] font-black">2</span>
+                  <span className="text-white text-[9px] font-black">3</span>
                 </div>
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Mobile Number</p>
               </div>
@@ -303,11 +389,11 @@ export default function BookPage() {
             {/* DIVIDER */}
             <div className="h-px bg-zinc-100" />
 
-            {/* ══ STEP 3 — VEHICLE CATEGORY (OPTIONAL / ALL DEFAULT) ══ */}
-            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.22 }}>
+            {/* ══ STEP 4 — VEHICLE CATEGORY (OPTIONAL / ALL DEFAULT) ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.24 }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-[9px] font-black">3</span>
+                  <span className="text-white text-[9px] font-black">4</span>
                 </div>
                 <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Vehicle Preference</p>
               </div>
@@ -361,11 +447,13 @@ export default function BookPage() {
                 whileHover={canContinue ? { scale: 1.02 } : {}}
                 disabled={!canContinue}
                 onClick={() => router.push(
-                  `/search?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobileNumber=${encodeURIComponent(mobile)}&pickupLat=${pickupLat}&pickupLng=${pickupLng}&dropLat=${dropLat}&dropLng=${dropLng}`
+                  `/search?pickup=${encodeURIComponent(pickup)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobileNumber=${encodeURIComponent(mobile)}&pickupLat=${pickupLat}&pickupLng=${pickupLng}&dropLat=${dropLat}&dropLng=${dropLng}&isPooled=${isPooled}&parcelCategory=${parcelCategory}`
                 )}
-                className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-black disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none"
+                className={`w-full h-14 rounded-2xl disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none ${
+                  isPooled ? "bg-emerald-600 hover:bg-emerald-700" : "bg-zinc-900 hover:bg-black"
+                }`}
               >
-                <span>Compare Prices & Vehicles</span>
+                <span>{isPooled ? "Compare Pooled Parcel Prices" : "Compare Prices & Vehicles"}</span>
                 <motion.div
                   animate={canContinue ? { x: [0, 4, 0] } : {}}
                   transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1 }}

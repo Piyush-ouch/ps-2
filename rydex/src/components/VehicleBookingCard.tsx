@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Bike, Car, Truck, Zap,
   IndianRupee, Clock, Gauge,
-  ArrowRight, Star
+  ArrowRight, Star, Package, Sparkles
 } from "lucide-react";
 
 interface VehicleProps {
@@ -20,7 +20,9 @@ interface VehicleProps {
   };
   distanceKm?: number;
   isRecommended?: boolean;
-  onBook?: () => void;
+  isPooled?: boolean;
+  parcelCategory?: string;
+  onBook?: (fareData: { effectiveFare: number; originalFare: number; savingsAmount: number }) => void;
 }
 
 const TYPE_CONFIG = {
@@ -31,8 +33,14 @@ const TYPE_CONFIG = {
   truck:   { label: "Truck",   Icon: Truck },
 };
 
+const DISCOUNT_RATES: Record<string, number> = {
+  small: 0.35,
+  medium: 0.25,
+  heavy: 0.15,
+};
+
 export default function VehicleBookingCard({
-  vehicle, distanceKm = 0, isRecommended, onBook,
+  vehicle, distanceKm = 0, isRecommended, isPooled = false, parcelCategory = "small", onBook,
 }: VehicleProps) {
   const {
     type, vehicleModel, number,
@@ -40,7 +48,11 @@ export default function VehicleBookingCard({
   } = vehicle;
 
   const { label, Icon } = TYPE_CONFIG[type] ?? TYPE_CONFIG.car;
-  const estimated = Math.round(baseFare + distanceKm * pricePerKm);
+  const originalFare = Math.round(baseFare + distanceKm * pricePerKm);
+
+  const discountRate = isPooled ? (DISCOUNT_RATES[parcelCategory] || 0.25) : 0;
+  const effectiveFare = isPooled ? Math.round(originalFare * (1 - discountRate)) : originalFare;
+  const savingsAmount = originalFare - effectiveFare;
 
   return (
     <motion.div
@@ -54,8 +66,21 @@ export default function VehicleBookingCard({
       {/* Hover border glow */}
       <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-zinc-900 transition-all duration-300 pointer-events-none z-10" />
 
+      {/* SMART POOL SAVINGS BADGE */}
+      {isPooled && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.15 }}
+          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-emerald-600 text-white text-[10px] font-black tracking-wider uppercase px-3 py-1.5 rounded-full shadow-lg"
+        >
+          <Package size={10} className="text-white" />
+          Pool Save ₹{savingsAmount} ({Math.round(discountRate * 100)}% OFF)
+        </motion.div>
+      )}
+
       {/* BEST PICK BADGE */}
-      {isRecommended && (
+      {isRecommended && !isPooled && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -149,19 +174,27 @@ export default function VehicleBookingCard({
         {/* FARE + BOOK */}
         <div className="flex items-end justify-between pt-3 border-t border-zinc-100">
           <div>
-            <p className="text-zinc-400 text-[9px] uppercase tracking-widest font-bold mb-0.5">
-              Est. Fare
-            </p>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <p className="text-zinc-400 text-[9px] uppercase tracking-widest font-bold">
+                {isPooled ? "Pooled Fare" : "Est. Fare"}
+              </p>
+              {isPooled && (
+                <span className="line-through text-zinc-400 text-[10px] font-semibold">
+                  ₹{originalFare}
+                </span>
+              )}
+            </div>
+
             <motion.div
-              key={estimated}
+              key={effectiveFare}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
               className="flex items-baseline gap-0.5"
             >
-              <IndianRupee size={16} className="text-zinc-900 mb-0.5" strokeWidth={2.5} />
-              <span className="text-zinc-900 text-3xl font-black tracking-tight leading-none">
-                {estimated}
+              <IndianRupee size={16} className={isPooled ? "text-emerald-600 mb-0.5" : "text-zinc-900 mb-0.5"} strokeWidth={2.5} />
+              <span className={`text-3xl font-black tracking-tight leading-none ${isPooled ? "text-emerald-600" : "text-zinc-900"}`}>
+                {effectiveFare}
               </span>
             </motion.div>
           </div>
@@ -169,10 +202,12 @@ export default function VehicleBookingCard({
           <motion.button
             whileTap={{ scale: 0.92 }}
             whileHover={{ scale: 1.04 }}
-            onClick={onBook}
-            className="group/btn flex items-center gap-2 bg-zinc-900 hover:bg-black text-white text-sm font-black px-6 py-3.5 rounded-2xl transition-colors shadow-md"
+            onClick={() => onBook?.({ effectiveFare, originalFare, savingsAmount })}
+            className={`group/btn flex items-center gap-2 text-white text-sm font-black px-6 py-3.5 rounded-2xl transition-colors shadow-md ${
+              isPooled ? "bg-emerald-600 hover:bg-emerald-700" : "bg-zinc-900 hover:bg-black"
+            }`}
           >
-            Book
+            {isPooled ? "Book Pool" : "Book"}
             <motion.div
               initial={{ x: 0 }}
               whileHover={{ x: 3 }}

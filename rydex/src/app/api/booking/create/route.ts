@@ -32,6 +32,10 @@ export async function POST(req: Request) {
     dropLocation,
     fare,
     mobileNumber, // This is user's mobile number from frontend
+    isPooled,
+    parcelCategory,
+    originalFare,
+    savingsAmount,
   } = body;
 
   if (
@@ -79,6 +83,10 @@ export async function POST(req: Request) {
     fare,
     userMobileNumber: mobileNumber, // Mobile number from frontend (user's)
     driverMobileNumber: driver.mobileNumber, // Mobile number from database (driver's)
+    isPooled: Boolean(isPooled),
+    parcelCategory: parcelCategory || "standard",
+    originalFare: originalFare ? Number(originalFare) : fare,
+    savingsAmount: savingsAmount ? Number(savingsAmount) : 0,
     status: "requested",
   });
   

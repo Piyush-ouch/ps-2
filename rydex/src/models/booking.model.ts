@@ -53,6 +53,13 @@ pickupOtpExpires: Date
 dropOtpExpires: Date
   userRated?: boolean;
   driverRated?: boolean;
+
+  /* ===== SMART PARCEL POOLING ===== */
+  isPooled?: boolean;
+  parcelCategory?: "standard" | "small" | "medium" | "heavy";
+  originalFare?: number;
+  savingsAmount?: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -147,6 +154,24 @@ dropOtpExpires: {
     driverRated: {
       type: Boolean,
       default: false,
+    },
+
+    /* ===== SMART PARCEL POOLING ===== */
+    isPooled: {
+      type: Boolean,
+      default: false,
+    },
+    parcelCategory: {
+      type: String,
+      enum: ["standard", "small", "medium", "heavy"],
+      default: "standard",
+    },
+    originalFare: {
+      type: Number,
+    },
+    savingsAmount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }
