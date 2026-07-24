@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, MapPin, Navigation,
   Bike, Car, Truck, LocateFixed, Phone,
-  CheckCircle2, ChevronRight
+  CheckCircle2, ChevronRight, Layers
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,14 +13,15 @@ type Place = {
   id: string; name: string; city?: string; state?: string;
   country?: string; countrycode?: string; lat: number; lng: number;
 };
-type VehicleType = "bike" | "auto" | "car" | "loading" | "truck";
+type VehicleType = "all" | "bike" | "auto" | "car" | "loading" | "truck";
 
 const VEHICLES = [
-  { id: "bike",    label: "Bike",    Icon: Bike,  desc: "Quick & affordable" },
-  { id: "auto",    label: "Auto",    Icon: Car,   desc: "Everyday rides"     },
-  { id: "car",     label: "Car",     Icon: Car,   desc: "Comfort rides"      },
-  { id: "loading", label: "Loading", Icon: Truck, desc: "Small cargo"        },
-  { id: "truck",   label: "Truck",   Icon: Truck, desc: "Heavy transport"    },
+  { id: "all",     label: "All Vehicles", Icon: Layers, desc: "Compare all prices" },
+  { id: "bike",    label: "Bike",         Icon: Bike,   desc: "Quick & affordable" },
+  { id: "auto",    label: "Auto",         Icon: Car,    desc: "Everyday rides"     },
+  { id: "car",     label: "Car",          Icon: Car,    desc: "Comfort rides"      },
+  { id: "loading", label: "Loading",      Icon: Truck,  desc: "Small cargo"        },
+  { id: "truck",   label: "Truck",        Icon: Truck,  desc: "Heavy transport"    },
 ];
 
 const stepVariants = {
@@ -33,7 +34,7 @@ export default function BookPage() {
 
   const [pickup,   setPickup]   = useState("");
   const [drop,     setDrop]     = useState("");
-  const [vehicle,  setVehicle]  = useState<VehicleType | null>(null);
+  const [vehicle,  setVehicle]  = useState<VehicleType>("all");
   const [mobile,   setMobile]   = useState("");
 
   const [pickupResults, setPickupResults] = useState<Place[]>([]);
@@ -46,7 +47,7 @@ export default function BookPage() {
   const [dropLng,   setDropLng]   = useState<number | null>(null);
   const [locating,  setLocating]  = useState(false);
 
-  const canContinue = !!(pickup && drop && vehicle && mobile && pickupLat && pickupLng && dropLat && dropLng);
+  const canContinue = !!(pickup && drop && mobile && pickupLat && pickupLng && dropLat && dropLng);
 
   /* ── SEARCH ── */
   const searchAddress = async (q: string, setResults: (r: Place[]) => void, restrict?: string | null) => {
@@ -97,7 +98,7 @@ export default function BookPage() {
   };
 
   /* ── PROGRESS ── */
-  const progress = [!!vehicle, !!(mobile.length >= 10), !!pickup, !!drop].filter(Boolean).length;
+  const progress = [!!pickup, !!drop, !!(mobile.length >= 10), !!vehicle].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-zinc-100 flex items-center justify-center px-4 py-10">
@@ -142,101 +143,13 @@ export default function BookPage() {
 
           <div className="p-6 space-y-7">
 
-            {/* ══ STEP 1 — VEHICLE ══ */}
-            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.05 }}>
+            {/* ══ STEP 1 — LOCATIONS ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.05 }} className="space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-[9px] font-black">1</span>
                 </div>
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Choose Vehicle</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                {VEHICLES.map((v, i) => {
-                  const active = vehicle === v.id;
-                  return (
-                    <motion.button
-                      key={v.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.07 + i * 0.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setVehicle(v.id as VehicleType)}
-                      className={`relative p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all duration-200 ${
-                        active
-                          ? "bg-zinc-900 border-zinc-900 shadow-lg"
-                          : "bg-zinc-50 border-zinc-200 hover:border-zinc-400"
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                        active ? "bg-white" : "bg-zinc-200"
-                      }`}>
-                        <v.Icon size={18} className={active ? "text-zinc-900" : "text-zinc-600"} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`text-sm font-bold truncate ${active ? "text-white" : "text-zinc-900"}`}>{v.label}</p>
-                        <p className={`text-[10px] truncate ${active ? "text-zinc-400" : "text-zinc-400"}`}>{v.desc}</p>
-                      </div>
-                      {active && (
-                        <motion.div
-                          initial={{ scale: 0 }} animate={{ scale: 1 }}
-                          className="absolute top-2.5 right-2.5"
-                        >
-                          <CheckCircle2 size={13} className="text-white fill-white/20" />
-                        </motion.div>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* DIVIDER */}
-            <div className="h-px bg-zinc-100" />
-
-            {/* ══ STEP 2 — MOBILE ══ */}
-            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.15 }}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-[9px] font-black">2</span>
-                </div>
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Mobile Number</p>
-              </div>
-
-              <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 focus-within:border-zinc-900 focus-within:bg-white transition-all">
-                <div className="w-8 h-8 rounded-xl bg-zinc-200 flex items-center justify-center flex-shrink-0">
-                  <Phone size={14} className="text-zinc-600" />
-                </div>
-                <input
-                  type="tel"
-                  value={mobile}
-                  onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter your mobile number"
-                  inputMode="numeric"
-                  maxLength={15}
-                  className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 outline-none"
-                />
-                <AnimatePresence>
-                  {mobile.length >= 10 && (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                      <CheckCircle2 size={16} className="text-emerald-500 fill-emerald-50 flex-shrink-0" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <p className="text-zinc-400 text-[10px] mt-1.5 ml-1">Ride updates will be sent to this number</p>
-            </motion.div>
-
-            {/* DIVIDER */}
-            <div className="h-px bg-zinc-100" />
-
-            {/* ══ STEP 3 — LOCATIONS ══ */}
-            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.22 }} className="space-y-3">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-[9px] font-black">3</span>
-                </div>
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Route</p>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Route (Pickup & Drop)</p>
               </div>
 
               {/* Route visual connector */}
@@ -351,6 +264,94 @@ export default function BookPage() {
               </div>
             </motion.div>
 
+            {/* DIVIDER */}
+            <div className="h-px bg-zinc-100" />
+
+            {/* ══ STEP 2 — MOBILE ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.15 }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-[9px] font-black">2</span>
+                </div>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Mobile Number</p>
+              </div>
+
+              <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 focus-within:border-zinc-900 focus-within:bg-white transition-all">
+                <div className="w-8 h-8 rounded-xl bg-zinc-200 flex items-center justify-center flex-shrink-0">
+                  <Phone size={14} className="text-zinc-600" />
+                </div>
+                <input
+                  type="tel"
+                  value={mobile}
+                  onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter your mobile number"
+                  inputMode="numeric"
+                  maxLength={15}
+                  className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 outline-none"
+                />
+                <AnimatePresence>
+                  {mobile.length >= 10 && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                      <CheckCircle2 size={16} className="text-emerald-500 fill-emerald-50 flex-shrink-0" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <p className="text-zinc-400 text-[10px] mt-1.5 ml-1">Ride updates will be sent to this number</p>
+            </motion.div>
+
+            {/* DIVIDER */}
+            <div className="h-px bg-zinc-100" />
+
+            {/* ══ STEP 3 — VEHICLE CATEGORY (OPTIONAL / ALL DEFAULT) ══ */}
+            <motion.div variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.22 }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-[9px] font-black">3</span>
+                </div>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Vehicle Preference</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {VEHICLES.map((v, i) => {
+                  const active = vehicle === v.id;
+                  return (
+                    <motion.button
+                      key={v.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.07 + i * 0.04 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setVehicle(v.id as VehicleType)}
+                      className={`relative p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all duration-200 ${
+                        active
+                          ? "bg-zinc-900 border-zinc-900 shadow-lg"
+                          : "bg-zinc-50 border-zinc-200 hover:border-zinc-400"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                        active ? "bg-white" : "bg-zinc-200"
+                      }`}>
+                        <v.Icon size={18} className={active ? "text-zinc-900" : "text-zinc-600"} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold truncate ${active ? "text-white" : "text-zinc-900"}`}>{v.label}</p>
+                        <p className={`text-[10px] truncate ${active ? "text-zinc-400" : "text-zinc-400"}`}>{v.desc}</p>
+                      </div>
+                      {active && (
+                        <motion.div
+                          initial={{ scale: 0 }} animate={{ scale: 1 }}
+                          className="absolute top-2.5 right-2.5"
+                        >
+                          <CheckCircle2 size={13} className="text-white fill-white/20" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
             {/* ══ CTA ══ */}
             <motion.div
               variants={stepVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}
@@ -364,7 +365,7 @@ export default function BookPage() {
                 )}
                 className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-black disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none"
               >
-                <span>Continue</span>
+                <span>Compare Prices & Vehicles</span>
                 <motion.div
                   animate={canContinue ? { x: [0, 4, 0] } : {}}
                   transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 1 }}
@@ -380,10 +381,9 @@ export default function BookPage() {
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="text-center text-zinc-400 text-[10px] font-medium mt-2.5 tracking-wide"
                   >
-                    {!vehicle ? "Select a vehicle to continue" :
-                     mobile.length < 10 ? "Enter a valid mobile number" :
-                     !pickup ? "Enter pickup location" :
-                     !drop ? "Enter drop location" : ""}
+                    {!pickup ? "Enter pickup location" :
+                     !drop ? "Enter drop location" :
+                     mobile.length < 10 ? "Enter a valid mobile number" : ""}
                   </motion.p>
                 )}
               </AnimatePresence>

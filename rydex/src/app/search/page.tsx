@@ -2,26 +2,27 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft, MapPin, Navigation,
   Bike, Car, Truck, Clock, Route,
-  Zap, Search, RefreshCw
+  Zap, Search, RefreshCw, Layers
 } from "lucide-react";
 import VehicleBookingCard from "@/components/VehicleBookingCard";
 
 const RouteMap = dynamic(() => import("@/components/RouteMap"), { ssr: false });
 
-const VEHICLE_META: any = {
-  bike:    { label: "Bike",    Icon: Bike  },
-  auto:    { label: "Auto",    Icon: Car   },
-  car:     { label: "Car",     Icon: Car   },
-  loading: { label: "Loading", Icon: Truck },
-  truck:   { label: "Truck",   Icon: Truck },
-};
+const CATEGORIES = [
+  { id: "all",     label: "All",     Icon: Layers },
+  { id: "bike",    label: "Bike",    Icon: Bike   },
+  { id: "auto",    label: "Auto",    Icon: Car    },
+  { id: "car",     label: "Car",     Icon: Car    },
+  { id: "loading", label: "Loading", Icon: Truck  },
+  { id: "truck",   label: "Truck",   Icon: Truck  },
+];
 
-export default function SearchPage() {
+function SearchContent() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -31,12 +32,12 @@ export default function SearchPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading,  setLoading]  = useState(false);
 
-  const vehicle      = params.get("vehicle") || "";
-  const mobileNumber = params.get("mobileNumber") || "";
-  const pickupLat    = Number(params.get("pickupLat"));
-  const pickupLng    = Number(params.get("pickupLng"));
-  const meta         = VEHICLE_META[vehicle];
-  const eta          = km !== null ? Math.max(3, Math.round((km / 25) * 60)) : null;
+  const vehicleParam   = params.get("vehicle") || "all";
+  const [activeCategory, setActiveCategory] = useState<string>(vehicleParam);
+  const mobileNumber   = params.get("mobileNumber") || "";
+  const pickupLat      = Number(params.get("pickupLat"));
+  const pickupLng      = Number(params.get("pickupLng"));
+  const eta            = km !== null ? Math.max(3, Math.round((km / 25) * 60)) : null;
 
   async function fetchNearbyVehicles(lat: number, lng: number) {
     try {
@@ -44,7 +45,7 @@ export default function SearchPage() {
       const res  = await fetch("/api/vehicles/nearby", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ latitude: lat, longitude: lng, vehicleType: vehicle }),
+        body: JSON.stringify({ latitude: lat, longitude: lng, vehicleType: "all" }),
       });
       const data = await res.json();
       if (data.success) setVehicles(data.vehicles);
@@ -59,6 +60,10 @@ export default function SearchPage() {
     if (!pickupLat || !pickupLng) return;
     fetchNearbyVehicles(pickupLat, pickupLng);
   }, [pickupLat, pickupLng]);
+
+  const filteredVehicles = activeCategory === "all"
+    ? vehicles
+    : vehicles.filter((v) => v.type === activeCategory);
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900 overflow-x-hidden">
@@ -157,15 +162,13 @@ export default function SearchPage() {
               <h2 className="text-zinc-900 text-lg font-black tracking-tight">
                 {loading
                   ? "Finding vehicles…"
-                  : vehicles.length > 0
-                  ? `${vehicles.length} Available`
+                  : filteredVehicles.length > 0
+                  ? `${filteredVehicles.length} Available ${activeCategory !== "all" ? activeCategory.toUpperCase() : ""}`
                   : "No vehicles nearby"}
               </h2>
-              {meta && (
-                <p className="text-zinc-400 text-xs mt-0.5">
-                  {meta.label} rides near your pickup
-                </p>
-              )}
+              <p className="text-zinc-400 text-xs mt-0.5">
+                Compare available transport options & estimated fares
+              </p>
             </div>
 
             <AnimatePresence mode="wait">
@@ -194,9 +197,34 @@ export default function SearchPage() {
             </AnimatePresence>
           </motion.div>
 
+          {/* CATEGORY TABS */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
+            {CATEGORIES.map((cat) => {
+              const active = activeCategory === cat.id;
+              const catCount = cat.id === "all" ? vehicles.length : vehicles.filter(v => v.type === cat.id).length;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
+                    active
+                      ? "bg-zinc-900 text-white shadow-md"
+                      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                  }`}
+                >
+                  <cat.Icon size={14} />
+                  <span>{cat.label}</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${active ? "bg-white/20 text-white" : "bg-zinc-200 text-zinc-600"}`}>
+                    {catCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* EMPTY STATE */}
           <AnimatePresence>
-            {!loading && vehicles.length === 0 && (
+            {!loading && filteredVehicles.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -208,7 +236,9 @@ export default function SearchPage() {
                 </div>
                 <p className="text-zinc-900 font-bold text-base mb-1">No vehicles found</p>
                 <p className="text-zinc-400 text-sm max-w-xs leading-relaxed">
-                  No {meta?.label || "vehicle"} drivers are available near your pickup right now.
+                  {activeCategory !== "all"
+                    ? `No ${activeCategory} drivers available nearby right now. Try selecting another vehicle category above.`
+                    : "No drivers are available near your pickup right now."}
                 </p>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
@@ -223,7 +253,7 @@ export default function SearchPage() {
 
           {/* VEHICLE GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {vehicles.map((v, i) => (
+            {filteredVehicles.map((v, i) => (
               <motion.div
                 key={v._id}
                 initial={{ opacity: 0, y: 24 }}
@@ -257,5 +287,13 @@ export default function SearchPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-100 flex items-center justify-center">Loading search...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

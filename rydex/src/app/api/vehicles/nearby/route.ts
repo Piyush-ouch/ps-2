@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       owner: { $in: vendorIds },
       status: "approved",
       isActive: true,
-      ...(vehicleType && { type: vehicleType })
+      ...(vehicleType && vehicleType !== "all" && { type: vehicleType })
     }).lean()
 
     return NextResponse.json({
