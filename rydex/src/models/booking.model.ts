@@ -60,6 +60,11 @@ dropOtpExpires: Date
   originalFare?: number;
   savingsAmount?: number;
 
+  /* ===== PROOF OF DELIVERY ===== */
+  proofOfDeliveryPhotoUrl?: string;
+  proofOfDeliverySignatureUrl?: string;
+  hasProofOfDelivery?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -172,6 +177,14 @@ dropOtpExpires: {
     savingsAmount: {
       type: Number,
       default: 0,
+    },
+
+    /* ===== PROOF OF DELIVERY ===== */
+    proofOfDeliveryPhotoUrl: String,
+    proofOfDeliverySignatureUrl: String,
+    hasProofOfDelivery: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

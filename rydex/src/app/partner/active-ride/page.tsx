@@ -6,7 +6,7 @@ import {
   ChevronUp, Clock, Zap,
   CheckCircle2, KeyRound, ArrowRight,
   MapPin, Navigation, MessageCircle,
-  AlertCircle, XCircle
+  AlertCircle, XCircle, Camera, PenTool, FileCheck
 } from "lucide-react";
 import { getSocket } from "@/lib/socket";
 import { useEffect, useRef, useState } from "react";
@@ -40,6 +40,9 @@ export interface IBooking {
   paymentDeadline?: Date;
   userMobileNumber: string;
   driverMobileNumber: string;
+  proofOfDeliveryPhotoUrl?: string;
+  proofOfDeliverySignatureUrl?: string;
+  hasProofOfDelivery?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,6 +105,10 @@ export default function DriverRidePage() {
   const [dropOtp,        setDropOtp]        = useState("");
   const [loadingDropOtp, setLoadingDropOtp] = useState(false);
   const [dropOtpError,   setDropOtpError]   = useState("");
+
+  /* Proof of Delivery */
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const [signatureUrl,  setSignatureUrl]  = useState<string | null>(null);
 
   /* Chat & Sheet */
   const [chatOpen, setChatOpen] = useState(false);
@@ -210,13 +217,24 @@ export default function DriverRidePage() {
       setLoadingDropOtp(true);
       const res  = await fetch("/api/partner/bookings/verify-drop-otp", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: booking?._id, otp: dropOtp }),
+        body: JSON.stringify({
+          bookingId: booking?._id,
+          otp: dropOtp,
+          deliveryPhotoUrl: deliveryPhoto,
+          signatureUrl: signatureUrl,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setDropOtpError(data.message || "Invalid OTP"); return; }
       setDropOtp("");
       setDropOtpMode(false);
-      setBooking(prev => prev ? { ...prev, status: "completed" } : prev);
+      setBooking(prev => prev ? {
+        ...prev,
+        status: "completed",
+        proofOfDeliveryPhotoUrl: deliveryPhoto || undefined,
+        proofOfDeliverySignatureUrl: signatureUrl || undefined,
+        hasProofOfDelivery: !!(deliveryPhoto || signatureUrl),
+      } : prev);
     } catch { setDropOtpError("Verification failed"); }
     finally   { setLoadingDropOtp(false); }
   };
@@ -302,6 +320,7 @@ export default function DriverRidePage() {
     setOtpMode, setOtp, setOtpError, handleVerifyOtp, sendPickupOtp,
     dropOtpMode, dropOtp, loadingDropOtp, dropOtpError,
     setDropOtpMode, setDropOtp, setDropOtpError, handleVerifyDropOtp, sendDropOtp,
+    deliveryPhoto, setDeliveryPhoto, signatureUrl, setSignatureUrl,
     chatOpen, onChatToggle: () => canChat && setChatOpen(v => !v),
   };
 
@@ -423,6 +442,7 @@ function ActionBar({
   setOtpMode, setOtp, setOtpError, handleVerifyOtp, sendPickupOtp,
   dropOtpMode, dropOtp, loadingDropOtp, dropOtpError,
   setDropOtpMode, setDropOtp, setDropOtpError, handleVerifyDropOtp, sendDropOtp,
+  deliveryPhoto, setDeliveryPhoto, signatureUrl, setSignatureUrl,
 }: any) {
   if (!["confirmed", "started"].includes(status)) return null;
 
@@ -493,41 +513,89 @@ function ActionBar({
           <motion.button key="drop-btn"
             initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
             onClick={async () => { await sendDropOtp(); setDropOtpMode(true); }}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2 shadow-lg"
           >
-            <Navigation size={16} /> Mark as Dropped <ArrowRight size={15} />
+            <Navigation size={16} /> Mark as Dropped & Proof of Delivery <ArrowRight size={15} />
           </motion.button>
         )}
 
-        {/* STATE 5 — Drop OTP */}
+        {/* STATE 5 — Drop OTP & PROOF OF DELIVERY */}
         {status === "started" && dropOtpMode && (
           <motion.div key="drop-otp"
             initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }} transition={{ duration: 0.3 }}
-            className="bg-zinc-50 border border-zinc-200 rounded-2xl overflow-hidden"
+            className="bg-zinc-50 border border-zinc-200 rounded-2xl overflow-hidden max-h-[75vh] overflow-y-auto"
           >
-            <div className="bg-emerald-700 px-4 py-3 flex items-center gap-2">
-              <KeyRound size={14} className="text-white" />
-              <p className="text-white text-xs font-bold tracking-wide uppercase">Confirm Drop OTP</p>
+            <div className="bg-emerald-700 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeyRound size={14} className="text-white" />
+                <p className="text-white text-xs font-bold tracking-wide uppercase">Drop OTP & Proof of Delivery</p>
+              </div>
+              <span className="text-[10px] bg-emerald-950 text-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                POD Required
+              </span>
             </div>
-            <div className="p-4 space-y-3">
-              <p className="text-xs text-zinc-500">Ask the customer for their drop OTP to complete the ride.</p>
-              <div className="flex justify-center">
-                <input type="text" inputMode="numeric" maxLength={4} value={dropOtp}
-                  onChange={e => { setDropOtp(e.target.value.replace(/\D/g, "")); setDropOtpError(""); }}
-                  placeholder="· · · ·"
-                  className="w-48 border-2 border-zinc-200 focus:border-emerald-600 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
+            <div className="p-4 space-y-4">
+              {/* Drop OTP */}
+              <div>
+                <p className="text-xs text-zinc-500 mb-2">Ask customer for their 4-digit drop OTP.</p>
+                <div className="flex justify-center">
+                  <input type="text" inputMode="numeric" maxLength={4} value={dropOtp}
+                    onChange={e => { setDropOtp(e.target.value.replace(/\D/g, "")); setDropOtpError(""); }}
+                    placeholder="· · · ·"
+                    className="w-48 border-2 border-zinc-200 focus:border-emerald-600 rounded-xl px-4 py-2 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Cargo Photo Upload */}
+              <div className="space-y-1.5 border-t border-zinc-200 pt-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-zinc-700 flex items-center gap-1.5">
+                    <Camera size={14} className="text-emerald-600" /> Cargo Delivery Photo
+                  </p>
+                  {deliveryPhoto && <span className="text-[10px] text-emerald-600 font-bold">✓ Photo Attached</span>}
+                </div>
+                {deliveryPhoto ? (
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-200 h-28">
+                    <img src={deliveryPhoto} alt="Delivery Cargo" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setDeliveryPhoto(null)} className="absolute top-2 right-2 bg-zinc-900/80 text-white text-[10px] font-bold px-2 py-1 rounded-md">Retake</button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 rounded-xl p-3 bg-white cursor-pointer hover:bg-zinc-50 transition-colors">
+                    <Camera size={20} className="text-zinc-400 mb-1" />
+                    <span className="text-xs font-semibold text-zinc-600">Take / Upload Delivery Cargo Photo</span>
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setDeliveryPhoto(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Digital Canvas Signature */}
+              <div className="border-t border-zinc-200 pt-3">
+                <SignatureCanvas
+                  onSave={(dataUrl) => setSignatureUrl(dataUrl)}
+                  onClear={() => setSignatureUrl(null)}
                 />
               </div>
+
               {dropOtpError && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs text-center font-medium">{dropOtpError}</motion.p>}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <button onClick={() => { setDropOtpMode(false); setDropOtp(""); setDropOtpError(""); }}
-                  className="flex-1 border border-zinc-200 bg-white text-zinc-700 py-2.5 rounded-xl text-sm font-semibold active:scale-[0.97] transition-all"
+                  className="flex-1 border border-zinc-200 bg-white text-zinc-700 py-3 rounded-xl text-sm font-semibold active:scale-[0.97] transition-all"
                 >Cancel</button>
                 <button onClick={handleVerifyDropOtp} disabled={loadingDropOtp || dropOtp.length < 4}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-bold active:scale-[0.97] transition-all"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white py-3 rounded-xl text-sm font-bold active:scale-[0.97] transition-all shadow-md"
                 >
-                  {loadingDropOtp ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Verifying…</span> : "Complete Ride"}
+                  {loadingDropOtp ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Verifying…</span> : "Complete Delivery"}
                 </button>
               </div>
             </div>
@@ -743,6 +811,35 @@ function CompletedScreen({ booking }: { booking: IBooking }) {
             </div>
           )}
 
+          {(booking.hasProofOfDelivery || booking.proofOfDeliveryPhotoUrl || booking.proofOfDeliverySignatureUrl) && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-3 space-y-3 text-left">
+              <div className="flex items-center justify-between">
+                <p className="text-emerald-400 text-[10px] uppercase tracking-widest font-extrabold flex items-center gap-1.5">
+                  <CheckCircle2 size={12} /> Verified Proof of Delivery
+                </p>
+                <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-800">
+                  POD Secured
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {booking.proofOfDeliveryPhotoUrl && (
+                  <div>
+                    <p className="text-[9px] text-zinc-400 mb-1 font-semibold">Delivery Cargo Photo</p>
+                    <img src={booking.proofOfDeliveryPhotoUrl} alt="Delivery Cargo" className="w-full h-24 object-cover rounded-xl border border-zinc-700" />
+                  </div>
+                )}
+                {booking.proofOfDeliverySignatureUrl && (
+                  <div>
+                    <p className="text-[9px] text-zinc-400 mb-1 font-semibold">Recipient Signature</p>
+                    <div className="bg-white p-1 rounded-xl border border-zinc-700 h-24 flex items-center justify-center">
+                      <img src={booking.proofOfDeliverySignatureUrl} alt="Customer Signature" className="max-h-full max-w-full object-contain" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-6">
             <div className="flex gap-3 p-4 border-b border-zinc-800">
               <div className="flex flex-col items-center flex-shrink-0 pt-1">
@@ -775,6 +872,94 @@ function CompletedScreen({ booking }: { booking: IBooking }) {
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HTML5 CANVAS SIGNATURE PAD COMPONENT
+══════════════════════════════════════════════════════════════════════ */
+function SignatureCanvas({ onSave, onClear }: { onSave: (dataUrl: string) => void; onClear: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawing = useRef(false);
+
+  const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0].clientX : (e as React.MouseEvent<HTMLCanvasElement>).clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent<HTMLCanvasElement>).clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    isDrawing.current = true;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.strokeStyle = "#09090b";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    onSave(canvas.toDataURL("image/png"));
+  };
+
+  const stopDrawing = () => {
+    isDrawing.current = false;
+  };
+
+  const handleClear = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    onClear();
+  };
+
+  return (
+    <div className="space-y-1.5 text-left">
+      <div className="flex items-center justify-between text-xs font-bold text-zinc-700">
+        <span className="flex items-center gap-1.5">
+          <PenTool size={14} className="text-emerald-600" /> Recipient Signature Pad
+        </span>
+        <button type="button" onClick={handleClear} className="text-red-500 text-[11px] font-bold hover:underline">
+          Clear Signature
+        </button>
+      </div>
+      <div className="border-2 border-dashed border-zinc-300 rounded-xl bg-white overflow-hidden touch-none">
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={120}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          className="w-full h-28 cursor-crosshair"
+        />
+      </div>
+    </div>
   );
 }
 

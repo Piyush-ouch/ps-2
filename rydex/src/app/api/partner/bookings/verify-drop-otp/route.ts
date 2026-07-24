@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
   try {
 
-    const { bookingId, otp } = await req.json();
+    const { bookingId, otp, deliveryPhotoUrl, signatureUrl } = await req.json();
 
     const booking = await Booking.findById(bookingId);
 
@@ -33,19 +33,21 @@ export async function POST(req: Request) {
       );
     }
 
-    if (booking.dropExpires < new Date()) {
+    if (booking.dropOtpExpires && booking.dropOtpExpires < new Date()) {
       return NextResponse.json(
         { message: "OTP expired" },
         { status: 400 }
       );
     }
 
-    /* update status */
-
+    /* update status & POD details */
     booking.status = "completed";
-
     booking.dropOtp = "";
     booking.dropOtpExpires = undefined as any;
+
+    if (deliveryPhotoUrl) booking.proofOfDeliveryPhotoUrl = deliveryPhotoUrl;
+    if (signatureUrl) booking.proofOfDeliverySignatureUrl = signatureUrl;
+    if (deliveryPhotoUrl || signatureUrl) booking.hasProofOfDelivery = true;
 
     await booking.save();
 
