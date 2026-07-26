@@ -13,6 +13,7 @@ import {
   Car,
   Truck,
   ChevronRight,
+  Gift,
 } from "lucide-react";
 import AuthModal from "./AuthModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,7 +22,7 @@ import { signOut } from "next-auth/react";
 import { setUserData } from "@/redux/userSlice";
 import axios from "axios";
 
-const NAV_ITEMS = ["Home", "Bookings", "Fleet", "FAQ", "Contact"];
+const NAV_ITEMS = ["Home", "Bookings", "Fleet", "Referral", "FAQ", "Contact"];
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -359,20 +360,36 @@ function ProfileContent({ userData, handleLogout, router, mobile }: any) {
       <p className="font-semibold text-lg">{userData.name}</p>
       <p className="text-xs uppercase text-gray-500 mb-4">{userData.role}</p>
 
+      <button
+        onClick={() => router.push("/referral")}
+        className="w-full flex items-center gap-3 py-3 px-2 hover:bg-gray-100 rounded-xl transition text-left"
+      >
+        <div className="w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
+          <Gift size={16} />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold">Referrals & Rewards</span>
+          <span className="text-[11px] text-gray-500">
+            {userData.referralCredits ? `$${userData.referralCredits} Credits` : "Invite friends & earn $50"}
+          </span>
+        </div>
+        <ChevronRight size={16} className="ml-auto text-gray-400" />
+      </button>
+
       {userData.role !== "vendor" && (
         <button
           onClick={() => router.push("/partner/onboard/vehicle")}
-          className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl"
+          className="w-full flex items-center gap-3 py-3 px-2 hover:bg-gray-100 rounded-xl transition"
         >
           <VehicleStack />
           Become a Partner
-          <ChevronRight size={16} className="ml-auto" />
+          <ChevronRight size={16} className="ml-auto text-gray-400" />
         </button>
       )}
 
       <button
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl mt-2"
+        className="w-full flex items-center gap-3 py-3 px-2 hover:bg-gray-100 rounded-xl mt-1 text-red-600 hover:bg-red-50 transition"
       >
         <LogOut size={16} />
         Logout

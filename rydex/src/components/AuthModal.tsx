@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { X, Mail, Lock, Eye, EyeOff, User, Gift } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
@@ -20,6 +20,7 @@ export default function AuthModal({ open, onClose }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -74,6 +75,7 @@ export default function AuthModal({ open, onClose }: Props) {
         name,
         email,
         password,
+        referralCode: referralCode.trim() || undefined,
       });
       setStep("otp");
     } catch (error: any) {
@@ -271,6 +273,16 @@ export default function AuthModal({ open, onClose }: Props) {
                             <Eye size={18} />
                           )}
                         </button>
+                      </div>
+
+                      <div className="flex items-center gap-3 border border-amber-500/40 bg-amber-500/5 rounded-xl px-4 py-3">
+                        <Gift size={18} className="text-amber-600" />
+                        <input
+                          placeholder="Referral Code (Optional - Earn $25)"
+                          value={referralCode}
+                          onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                          className="w-full bg-transparent outline-none text-sm font-medium tracking-wide uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400"
+                        />
                       </div>
 
                       <button

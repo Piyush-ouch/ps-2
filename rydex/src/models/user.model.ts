@@ -58,6 +58,14 @@ socketId:string | null
   backgroundCheckStatus?: "not_started" | "pending" | "passed" | "failed" | "flagged";
   hasExpiredDocuments?: boolean;
 
+  /* ===== REFERRAL PROGRAM ===== */
+  referralCode?: string;
+  referredBy?: mongoose.Types.ObjectId | string | null;
+  pendingReferralCode?: string;
+  referralCredits: number;
+  referralCount: number;
+  totalReferralEarnings: number;
+
   /* ===== COMMON ===== */
   isEmailVerified: boolean;
   otp?: string;
@@ -212,6 +220,41 @@ const UserSchema = new Schema<IUser>(
 
     otp: String,
     otpExpiresAt: Date,
+
+    /* ===== REFERRAL PROGRAM ===== */
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+      trim: true,
+      index: true,
+    },
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    pendingReferralCode: {
+      type: String,
+      uppercase: true,
+      trim: true,
+    },
+    referralCredits: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    referralCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalReferralEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

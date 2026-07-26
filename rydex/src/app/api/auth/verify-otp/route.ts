@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import User from "@/models/user.model";
 import connectDb from "@/lib/db";
+import { ensureUserReferralCode, processReferralBonus } from "@/lib/referral";
 
 /* ---------------- POST: VERIFY OTP ---------------- */
 
@@ -65,7 +66,16 @@ console.log(otp)
     user.otp = undefined;
     user.otpExpiresAt = undefined;
 
+    await ensureUserReferralCode(user);
     await user.save();
+
+    /* ---------- PROCESS REFERRAL BONUS IF PENDING ---------- */
+    if (user.pendingReferralCode) {
+      await processReferralBonus({
+        newUserId: user._id.toString(),
+        referralCodeStr: user.pendingReferralCode,
+      });
+    }
 
     /* ---------- SUCCESS ---------- */
 

@@ -51,10 +51,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await connectDb()
         let dbUser=await User.findOne({email:user.email})
        if(!dbUser){
+         const cleanName = (user.name || "RYDEX").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
+         const userRefCode = `${cleanName.length >= 3 ? cleanName : "RYD"}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
          dbUser=await User.create({
           name:user.name,
           email:user.email,
+          referralCode: userRefCode,
          })
+       } else if (!dbUser.referralCode) {
+         const cleanName = (dbUser.name || "RYDEX").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
+         dbUser.referralCode = `${cleanName.length >= 3 ? cleanName : "RYD"}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+         await dbUser.save();
        }
 
        user.id=dbUser._id.toString()

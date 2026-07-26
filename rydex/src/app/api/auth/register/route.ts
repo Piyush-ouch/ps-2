@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     await connectDb();
 
     const body = await req.json();
-    const { name, email, password } = body;
+    const { name, email, password, referralCode } = body;
 
     /* ---------- VALIDATION ---------- */
 
@@ -53,15 +53,23 @@ export async function POST(req: NextRequest) {
 
     /* ---------- CREATE / UPDATE USER ---------- */
 
+    const cleanPendingCode = referralCode ? String(referralCode).trim().toUpperCase() : undefined;
+
     if (existingUser && !existingUser.isEmailVerified) {
       // Update OTP for unverified user
       existingUser.name = name;
       existingUser.password = hashedPassword;
       existingUser.otp = otp;
       existingUser.otpExpiresAt = otpExpiresAt;
+      if (cleanPendingCode) {
+        existingUser.pendingReferralCode = cleanPendingCode;
+      }
 
       await existingUser.save();
     } else {
+      const cleanName = (name || "RYDEX").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4);
+      const userRefCode = `${cleanName.length >= 3 ? cleanName : "RYD"}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
       await User.create({
         name,
         email,
@@ -70,6 +78,8 @@ export async function POST(req: NextRequest) {
         isEmailVerified: false,
         otp,
         otpExpiresAt,
+        referralCode: userRefCode,
+        pendingReferralCode: cleanPendingCode,
       });
     }
 
