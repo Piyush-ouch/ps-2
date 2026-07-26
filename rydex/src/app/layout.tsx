@@ -4,6 +4,7 @@ import "./globals.css";
 import StoreProvider from "@/redux/StoreProvider";
 import InitUser from "@/initUser";
 import Provider from "@/Provider";
+import { ThemeProvider } from "@/context/ThemeContext";
 import "leaflet/dist/leaflet.css";
 
 const geistSans = Geist({
@@ -27,16 +28,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white w-full min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased w-full min-h-screen transition-colors duration-300`}
       >
-<Provider>
-        <StoreProvider>
-          <InitUser/>
-        {children}
-        </StoreProvider>
-        </Provider>
+        <ThemeProvider>
+          <Provider>
+            <StoreProvider>
+              <InitUser />
+              {children}
+            </StoreProvider>
+          </Provider>
+        </ThemeProvider>
       </body>
     </html>
   );

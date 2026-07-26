@@ -16,6 +16,7 @@ import {
   Gift,
 } from "lucide-react";
 import AuthModal from "./AuthModal";
+import ThemeToggle from "./ThemeToggle";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { signOut } from "next-auth/react";
@@ -175,6 +176,7 @@ export default function Nav() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-3 relative">
+            <ThemeToggle />
 
             {/* DESKTOP PROFILE */}
             <div className="hidden md:block relative" ref={profileRef}>
