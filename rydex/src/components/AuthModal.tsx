@@ -278,7 +278,7 @@ export default function AuthModal({ open, onClose }: Props) {
                       <div className="flex items-center gap-3 border border-amber-500/40 bg-amber-500/5 rounded-xl px-4 py-3">
                         <Gift size={18} className="text-amber-600" />
                         <input
-                          placeholder="Referral Code (Optional - Earn $25)"
+                          placeholder="Referral Code (Optional - Get ₹100 Off)"
                           value={referralCode}
                           onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                           className="w-full bg-transparent outline-none text-sm font-medium tracking-wide uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400"

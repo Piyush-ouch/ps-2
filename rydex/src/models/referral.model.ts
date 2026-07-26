@@ -33,11 +33,11 @@ const ReferralSchema = new Schema<IReferral>(
     },
     referrerBonus: {
       type: Number,
-      default: 50,
+      default: 200,
     },
     referredBonus: {
       type: Number,
-      default: 25,
+      default: 100,
     },
     status: {
       type: String,

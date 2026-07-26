@@ -129,23 +129,23 @@ export default function ReferralPage() {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Join me on Rydex and get $25 in free ride credits using my referral code: ${referralCode}!\n\nSign up here: ${shareableUrl}`
+      `Join me on Rydex and get ₹100 off your next ride using my referral code: ${referralCode}!\n\nSign up here: ${shareableUrl}`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
   const handleShareTwitter = () => {
     const text = encodeURIComponent(
-      `Get $25 off your first vehicle booking on Rydex with code ${referralCode}! 🚀`
+      `Get ₹100 off your next vehicle booking on Rydex with code ${referralCode}! 🚀`
     );
     const url = encodeURIComponent(shareableUrl);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
   };
 
   const handleShareEmail = () => {
-    const subject = encodeURIComponent("Get $25 in free ride credits on Rydex!");
+    const subject = encodeURIComponent("Get ₹100 off your next ride on Rydex!");
     const body = encodeURIComponent(
-      `Hey!\n\nI'm using Rydex to book bikes, cars, and transport vehicles. Sign up with my code ${referralCode} or click the link below to get $25 in bonus ride credits:\n\n${shareableUrl}\n\nEnjoy!`
+      `Hey!\n\nI'm using Rydex to book bikes, cars, and transport vehicles. Sign up with my code ${referralCode} or click the link below to get ₹100 off your next ride:\n\n${shareableUrl}\n\nEnjoy!`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -206,7 +206,7 @@ export default function ReferralPage() {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-6xl font-extrabold tracking-tight text-white"
           >
-            Invite Friends, Earn <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">Free Credits</span>
+            Invite Friends, Earn <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent">₹200 Rewards</span>
           </motion.h1>
 
           <motion.p
@@ -215,7 +215,7 @@ export default function ReferralPage() {
             transition={{ delay: 0.2 }}
             className="text-gray-400 text-base md:text-lg leading-relaxed max-w-2xl mx-auto"
           >
-            Share your unique referral code with friends. They receive <strong className="text-amber-400 font-semibold">$25 in ride credits</strong> upon joining, and you earn <strong className="text-amber-400 font-semibold">$50</strong> for every successful invite!
+            Share your unique referral code with friends. They get <strong className="text-amber-400 font-semibold">₹100 OFF</strong> on their next ride, and you earn <strong className="text-amber-400 font-semibold">₹200 cash reward credits</strong> for every successful invite!
           </motion.p>
         </div>
 
@@ -235,7 +235,7 @@ export default function ReferralPage() {
               </div>
             </div>
             <div className="mt-4">
-              <span className="text-3xl md:text-4xl font-extrabold text-white">${referralCredits}</span>
+              <span className="text-3xl md:text-4xl font-extrabold text-white">₹{referralCredits}</span>
               <span className="text-xs text-amber-400 font-semibold ml-2">Credits Balance</span>
             </div>
             <p className="text-xs text-gray-400 mt-2">Usable on all bike, car & loading bookings</p>
@@ -275,7 +275,7 @@ export default function ReferralPage() {
               </div>
             </div>
             <div className="mt-4">
-              <span className="text-3xl md:text-4xl font-extrabold text-white">${totalEarnings}</span>
+              <span className="text-3xl md:text-4xl font-extrabold text-white">₹{totalEarnings}</span>
               <span className="text-xs text-emerald-400 font-semibold ml-2">Lifetime Bonus</span>
             </div>
             <p className="text-xs text-gray-400 mt-2">Total referral bonuses credited to date</p>
@@ -299,7 +299,7 @@ export default function ReferralPage() {
                 Your Shareable Referral Code
               </h2>
               <p className="text-sm text-gray-400 mt-1">
-                Friends enter this code during signup to instantly unlock $25 ride credit.
+                Friends enter this code during signup to instantly unlock ₹100 off on their next ride.
               </p>
             </div>
 
@@ -364,10 +364,10 @@ export default function ReferralPage() {
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Award className="text-amber-400" size={22} />
-                Have a Referral Code? Claim $25 Signup Bonus!
+                Have a Referral Code? Claim ₹100 Off Next Ride!
               </h3>
               <p className="text-xs text-gray-400">
-                If a friend invited you to Rydex and you didn't enter their code during signup, enter it below to receive your $25 credit bonus.
+                If a friend invited you to Rydex and you didn't enter their code during signup, enter it below to receive your ₹100 discount credit.
               </p>
             </div>
 
@@ -416,7 +416,7 @@ export default function ReferralPage() {
             <div className="w-10 h-10 rounded-full bg-amber-500 text-black font-black text-lg flex items-center justify-center mb-4">
               1
             </div>
-            <h3 className="text-lg font-semibold text-white">Share Your Link</h3>
+            <h3 className="text-lg font-semibold text-white">Share Your Code</h3>
             <p className="text-xs text-gray-400 mt-2 leading-relaxed">
               Copy your unique referral code or shareable invite link with your friends, family, and colleagues.
             </p>
@@ -438,9 +438,9 @@ export default function ReferralPage() {
             <div className="w-10 h-10 rounded-full bg-amber-500 text-black font-black text-lg flex items-center justify-center mb-4">
               3
             </div>
-            <h3 className="text-lg font-semibold text-white">Both Receive Credits</h3>
+            <h3 className="text-lg font-semibold text-white">Both Earn Rewards</h3>
             <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-              You automatically get <strong className="text-amber-400">$50</strong> credited to your wallet, and your friend gets <strong className="text-amber-400">$25</strong>!
+              You automatically get <strong className="text-amber-400">₹200</strong> credited to your wallet, and your friend gets <strong className="text-amber-400">₹100 OFF</strong> on their next ride!
             </p>
           </div>
         </div>
@@ -474,7 +474,7 @@ export default function ReferralPage() {
                 </div>
                 <div>
                   <span className="block text-slate-400">Earned</span>
-                  <span className="font-bold text-slate-300 text-base">${top2?.totalReferralEarnings || 0}</span>
+                  <span className="font-bold text-slate-300 text-base">₹{top2?.totalReferralEarnings || 0}</span>
                 </div>
               </div>
             </div>
@@ -496,7 +496,7 @@ export default function ReferralPage() {
                 </div>
                 <div>
                   <span className="block text-gray-400">Total Credits</span>
-                  <span className="font-extrabold text-amber-400 text-lg">${top1?.totalReferralEarnings || 0}</span>
+                  <span className="font-extrabold text-amber-400 text-lg">₹{top1?.totalReferralEarnings || 0}</span>
                 </div>
               </div>
             </div>
@@ -515,7 +515,7 @@ export default function ReferralPage() {
                 </div>
                 <div>
                   <span className="block text-gray-400">Earned</span>
-                  <span className="font-bold text-amber-300 text-base">${top3?.totalReferralEarnings || 0}</span>
+                  <span className="font-bold text-amber-300 text-base">₹{top3?.totalReferralEarnings || 0}</span>
                 </div>
               </div>
             </div>
@@ -572,7 +572,7 @@ export default function ReferralPage() {
                       </td>
                       <td className="px-6 py-4 font-semibold text-white">{item.referralCount}</td>
                       <td className="px-6 py-4 text-right font-bold text-amber-400">
-                        ${item.totalReferralEarnings}
+                        ₹{item.totalReferralEarnings}
                       </td>
                     </tr>
                   ))}
@@ -630,7 +630,7 @@ export default function ReferralPage() {
                         })}
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-amber-400">
-                        +${item.referrerBonus}
+                        +₹{item.referrerBonus}
                       </td>
                     </tr>
                   ))}

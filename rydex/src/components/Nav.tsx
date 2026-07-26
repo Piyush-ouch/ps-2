@@ -370,7 +370,7 @@ function ProfileContent({ userData, handleLogout, router, mobile }: any) {
         <div className="flex flex-col">
           <span className="text-sm font-semibold">Referrals & Rewards</span>
           <span className="text-[11px] text-gray-500">
-            {userData.referralCredits ? `$${userData.referralCredits} Credits` : "Invite friends & earn $50"}
+            {userData.referralCredits ? `₹${userData.referralCredits} Credits` : "Invite friends & earn ₹200"}
           </span>
         </div>
         <ChevronRight size={16} className="ml-auto text-gray-400" />

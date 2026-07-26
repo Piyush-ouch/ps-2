@@ -2,8 +2,8 @@ import User, { IUser } from "@/models/user.model";
 import Referral from "@/models/referral.model";
 import crypto from "crypto";
 
-export const REFERRER_BONUS = 50; // $50 default bonus for referrer
-export const REFEREE_BONUS = 25;  // $25 default bonus for referee
+export const REFERRER_BONUS = 200; // ₹200 default bonus for referrer
+export const REFEREE_BONUS = 100;  // ₹100 default discount bonus for referee on next ride
 
 /**
  * Generate a unique upper-case alphanumeric referral code.
@@ -128,7 +128,7 @@ export async function processReferralBonus({
 
     return {
       success: true,
-      message: `Referral bonus applied successfully! ${referrerBonusAmount} credits awarded to ${referrer.name} and ${refereeBonusAmount} credits added to your wallet.`,
+      message: `Referral bonus applied successfully! ₹${referrerBonusAmount} credits awarded to ${referrer.name} and ₹${refereeBonusAmount} off credited for your next ride.`,
       referrerName: referrer.name,
       referrerBonus: referrerBonusAmount,
       refereeBonus: refereeBonusAmount,
